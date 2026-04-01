@@ -2,29 +2,25 @@ import { useState, useMemo, useEffect } from 'react'
 import Background from './components/Background'
 import Header from './components/Header'
 import SettingsModal from './components/SettingsModal'
+import WordManager from './components/WordManager'
 import ReadingCard from './components/ReadingCard'
 import SpellingCard from './components/SpellingCard'
 import LetterZoomModal from './components/LetterZoomModal'
 import JewelBucket from './components/JewelBucket'
 import JewelBurst from './components/JewelBurst'
-import { VISUAL_WORDS, SIGHT_WORDS, GEMS } from './data/words'
+import { GEMS } from './data/words'
 import { useAudio } from './hooks/useAudio'
-
-// ── helpers ───────────────────────────────────────────────────────────────
-function buildWordPool(length, useSight) {
-  const vis = VISUAL_WORDS[length] || []
-  const sight = (SIGHT_WORDS[length] || []).map(w => ({ w, e: null }))
-  const pool = useSight ? [...vis, ...sight] : vis
-  return pool.length ? pool : vis
-}
+import { useWordData } from './hooks/useWordData'
 
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)] ?? null
 }
 
-// ── App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── Persistent state
+  // ── Word data (custom + built-in) ─────────────────────────────────
+  const wordData = useWordData()
+
+  // ── Persistent state ──────────────────────────────────────────────
   const [jewels, setJewels] = useState(() =>
     parseInt(localStorage.getItem('mw_jewels') || '0')
   )
@@ -33,41 +29,43 @@ export default function App() {
     catch { return [] }
   })
 
-  // ── Settings state
-  const [mode, setMode] = useState('reading')
-  const [wordLength, setWordLength] = useState(4)
+  // ── Settings state ────────────────────────────────────────────────
+  const [mode, setMode]               = useState('reading')
+  const [wordLength, setWordLength]   = useState(4)
   const [useSightWords, setUseSightWords] = useState(false)
   const [hidePicture, setHidePicture] = useState(true)
-  const [letterCase, setLetterCase] = useState('upper')
+  const [letterCase, setLetterCase]   = useState('upper')
 
-  // ── Game state
-  const [currentItem, setCurrentItem] = useState(null)
-  const [wordKey, setWordKey] = useState(0)      // increments → remounts card
-  const [spellMode, setSpellMode] = useState('letter')
+  // ── Game state ────────────────────────────────────────────────────
+  const [currentItem, setCurrentItem]     = useState(null)
+  const [wordKey, setWordKey]             = useState(0)
+  const [spellMode, setSpellMode]         = useState('letter')
   const [currentLetterIdx, setCurrentLetterIdx] = useState(0)
-  const [spelledSoFar, setSpelledSoFar] = useState([])
-  const [firstTry, setFirstTry] = useState(true)
+  const [spelledSoFar, setSpelledSoFar]   = useState([])
+  const [firstTry, setFirstTry]           = useState(true)
 
-  // ── UI state
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [zoomedLetter, setZoomedLetter] = useState(null)
-  const [burstKey, setBurstKey] = useState(0)
+  // ── UI state ──────────────────────────────────────────────────────
+  const [settingsOpen, setSettingsOpen]   = useState(false)
+  const [wordManagerOpen, setWordManagerOpen] = useState(false)
+  const [zoomedLetter, setZoomedLetter]   = useState(null)
+  const [burstKey, setBurstKey]           = useState(0)
 
   const { playTone, playCelebration } = useAudio()
 
-  // ── Derived word pool
+  // ── Word pool (re-derives when length, sight toggle, or custom words change) ──
   const wordPool = useMemo(
-    () => buildWordPool(wordLength, useSightWords),
-    [wordLength, useSightWords]
+    () => wordData.buildPool(wordLength, useSightWords),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [wordLength, useSightWords, wordData.customWords, wordData.hiddenWords]
   )
 
-  // ── Pick new word whenever pool changes
+  // Re-pick when pool changes
   useEffect(() => {
     loadNewWord(wordPool)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wordPool])
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────
   function loadNewWord(pool) {
     setCurrentItem(pickRandom(pool))
     setCurrentLetterIdx(0)
@@ -76,9 +74,7 @@ export default function App() {
     setWordKey(k => k + 1)
   }
 
-  function nextWord() {
-    loadNewWord(wordPool)
-  }
+  function nextWord() { loadNewWord(wordPool) }
 
   function handleSetMode(m) {
     setMode(m)
@@ -114,7 +110,7 @@ export default function App() {
       setSpelledSoFar(newSpelled)
       if (newSpelled.length >= currentItem.w.length) {
         if (firstTry) awardJewel()
-        setCurrentLetterIdx(currentItem.w.length) // marks complete
+        setCurrentLetterIdx(currentItem.w.length)
       } else {
         setCurrentLetterIdx(i => i + 1)
       }
@@ -149,20 +145,23 @@ export default function App() {
     setFirstTry(true)
   }
 
-  // ── Derived values ────────────────────────────────────────────────────────
-  const currentWord = currentItem?.w || ''
-  const currentEmoji = currentItem?.e || null
-  const isSight = !currentEmoji
+  // ── Derived ───────────────────────────────────────────────────────
+  const currentWord  = currentItem?.w ?? ''
+  const currentEmoji = currentItem?.e ?? null
+  const isSight      = !currentEmoji
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <>
       <Background />
       <div id="app">
-        {/* Header */}
-        <Header jewels={jewels} onReset={resetJewels} onOpenSettings={() => setSettingsOpen(true)} />
+        <Header
+          jewels={jewels}
+          onReset={resetJewels}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenWordManager={() => setWordManagerOpen(true)}
+        />
 
-        {/* Mode tabs */}
         <div className="mode-tabs">
           {[
             { id: 'reading',  label: '📖 Reading'  },
@@ -178,7 +177,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* Active card — key causes full remount (re-triggers cardIn animation) */}
         {currentItem && (
           mode === 'reading' ? (
             <ReadingCard
@@ -211,11 +209,10 @@ export default function App() {
           )
         )}
 
-        {/* Jewel collection bucket */}
         <JewelBucket jewelList={jewelList} />
       </div>
 
-      {/* Settings modal */}
+      {/* Modals */}
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -225,7 +222,12 @@ export default function App() {
         letterCase={letterCase}       setLetterCase={setLetterCase}
       />
 
-      {/* Letter zoom modal */}
+      <WordManager
+        isOpen={wordManagerOpen}
+        onClose={() => setWordManagerOpen(false)}
+        wordData={wordData}
+      />
+
       {zoomedLetter && (
         <LetterZoomModal
           letter={zoomedLetter}
@@ -234,7 +236,6 @@ export default function App() {
         />
       )}
 
-      {/* Celebration burst */}
       <JewelBurst triggerKey={burstKey} />
     </>
   )

@@ -1,4 +1,4 @@
-export default function Header({ jewels, onReset, onOpenSettings }) {
+export default function Header({ jewels, onReset, onOpenSettings, onOpenWordManager }) {
   return (
     <div className="header">
       <div className="logo">✨ Magic Words</div>
@@ -7,6 +7,9 @@ export default function Header({ jewels, onReset, onOpenSettings }) {
           <span className="jewel-icon">💎</span>
           <span>{jewels}</span>
         </div>
+        <button className="words-btn" onClick={onOpenWordManager} aria-label="Word Manager">
+          📝
+        </button>
         <button className="settings-btn" onClick={onOpenSettings} aria-label="Settings">
           ⚙️
         </button>
