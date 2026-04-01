@@ -243,6 +243,10 @@ body {
   cursor: pointer; transition: transform 0.2s;
 }
 .word-emoji:active { transform: scale(0.9); }
+.word-emoji--hidden {
+  font-size: 4rem; opacity: 0.35; cursor: default;
+  filter: grayscale(1);
+}
 
 /* ── Section label & badge ───────────────────────────────────────── */
 .section-label {
@@ -256,7 +260,7 @@ body {
   font-size: 0.75rem; font-weight: 700; color: var(--gold);
 }
 
-/* ── Letter tiles — 6 rainbow cycling colors ─────────────────────── */
+/* ── Letter tiles — uniform, easy-to-read style ──────────────────── */
 .word-display {
   display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center;
 }
@@ -265,17 +269,12 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800;
   cursor: pointer; transition: all 0.2s; user-select: none;
-  color: white;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.22);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 1px 0 rgba(255,255,255,0.35) inset;
+  background: white;
+  border: 2px solid rgba(167,139,250,0.45);
+  color: var(--primary-dark);
+  box-shadow: 0 3px 10px rgba(139,92,246,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
 }
 .letter-tile:active { transform: scale(0.88); }
-.letter-tile:nth-child(6n+1) { background: linear-gradient(145deg, #fda4af, #f43f5e); }
-.letter-tile:nth-child(6n+2) { background: linear-gradient(145deg, #fdba74, #f97316); }
-.letter-tile:nth-child(6n+3) { background: linear-gradient(145deg, #fcd34d, #d97706); }
-.letter-tile:nth-child(6n+4) { background: linear-gradient(145deg, #6ee7b7, #059669); }
-.letter-tile:nth-child(6n+5) { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.letter-tile:nth-child(6n+0) { background: linear-gradient(145deg, #c4b5fd, #7c3aed); }
 
 /* ── Letter zoom modal ───────────────────────────────────────────── */
 .zoom-overlay {
@@ -393,6 +392,15 @@ body {
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
+.reveal-btn {
+  width: 100%; padding: 18px; border-radius: 18px; border: none;
+  background: linear-gradient(135deg, #e0f2fe, #67e8f9, #c4b5fd);
+  font-family: 'Baloo 2', cursive; font-size: 1.3rem; font-weight: 800;
+  color: var(--primary-dark); cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(8,145,178,0.22);
+}
+.reveal-btn:active { transform: scale(0.97); }
+
 .did-it-btn {
   width: 100%; padding: 18px; border-radius: 18px; border: none;
   background: linear-gradient(135deg, #fde68a, #f59e0b, #6ee7b7);
