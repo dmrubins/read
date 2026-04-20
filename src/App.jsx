@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Background from './components/Background'
 import Header from './components/Header'
 import SettingsModal from './components/SettingsModal'
@@ -37,6 +37,7 @@ export default function App() {
   const [letterCase, setLetterCase]   = useState('upper')
 
   // ── Game state ────────────────────────────────────────────────────
+  const recentWords = useRef([])
   const [currentItem, setCurrentItem]     = useState(null)
   const [wordKey, setWordKey]             = useState(0)
   const [spellMode, setSpellMode]         = useState('letter')
@@ -67,7 +68,10 @@ export default function App() {
 
   // ── Helpers ───────────────────────────────────────────────────────
   function loadNewWord(pool) {
-    setCurrentItem(pickRandom(pool))
+    const available = pool.filter(item => !recentWords.current.includes(item.w))
+    const pick = pickRandom(available.length > 0 ? available : pool)
+    recentWords.current = [...recentWords.current, pick.w].slice(-5)
+    setCurrentItem(pick)
     setCurrentLetterIdx(0)
     setSpelledSoFar([])
     setFirstTry(true)
@@ -232,6 +236,7 @@ export default function App() {
         <LetterZoomModal
           letter={zoomedLetter}
           letterCase={letterCase}
+          currentWord={currentWord}
           onClose={() => setZoomedLetter(null)}
         />
       )}

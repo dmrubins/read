@@ -1,8 +1,10 @@
 import { LETTER_WORDS } from '../data/words'
 
-export default function LetterZoomModal({ letter, letterCase, onClose }) {
+export default function LetterZoomModal({ letter, letterCase, currentWord, onClose }) {
   const key = letter.toLowerCase()
-  const example = LETTER_WORDS[key] || { word: letter.toUpperCase(), emoji: '🔤' }
+  const entry = LETTER_WORDS[key] || { word: letter.toUpperCase(), emoji: '🔤' }
+  const primaryMatches = entry.word.toLowerCase() === (currentWord || '').toLowerCase()
+  const example = primaryMatches && entry.alt ? entry.alt : entry
   const displayLetter = letterCase === 'upper' ? letter.toUpperCase() : letter.toLowerCase()
 
   return (
