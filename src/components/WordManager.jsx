@@ -1,4 +1,18 @@
 import { useState } from 'react'
+import { FAMILY_GROUPS } from '../data/words'
+
+function RimeSelect({ value, onChange }) {
+  return (
+    <select className="wm-select" value={value} onChange={e => onChange(e.target.value)} aria-label="Word family / ending sound">
+      <option value="">No family</option>
+      {FAMILY_GROUPS.map(g => (
+        <optgroup key={g.id} label={g.label}>
+          {g.families.map(f => <option key={f.rime} value={f.rime}>{f.rime}</option>)}
+        </optgroup>
+      ))}
+    </select>
+  )
+}
 
 const LENGTH_LABELS = { 3: '3 letters', 4: '4 letters', 5: '5 letters', 6: '6 letters' }
 
@@ -10,10 +24,12 @@ export default function WordManager({ isOpen, onClose, wordData }) {
   const [filter, setFilter]       = useState('all')
   const [newWord, setNewWord]     = useState('')
   const [newEmoji, setNewEmoji]   = useState('')
+  const [newRime, setNewRime]     = useState('')
   const [addError, setAddError]   = useState('')
   const [editingW, setEditingW]   = useState(null)   // word string being edited
   const [editWord, setEditWord]   = useState('')
   const [editEmoji, setEditEmoji] = useState('')
+  const [editRime, setEditRime]   = useState('')
 
   if (!isOpen) return null
 
@@ -26,10 +42,11 @@ export default function WordManager({ isOpen, onClose, wordData }) {
 
   // ── Add ───────────────────────────────────────────────────────────
   function handleAdd() {
-    const err = wordData.addWord(newWord, newEmoji)
+    const err = wordData.addWord(newWord, newEmoji, newRime)
     if (err) { setAddError(err); return }
     setNewWord('')
     setNewEmoji('')
+    setNewRime('')
     setAddError('')
   }
 
@@ -38,12 +55,15 @@ export default function WordManager({ isOpen, onClose, wordData }) {
     setEditingW(item.w)
     setEditWord(item.w)
     setEditEmoji(item.e ?? '')
+    setEditRime(item.rime ?? '')
   }
   function saveEdit() {
-    wordData.editWord(editingW, editWord, editEmoji)
+    const err = wordData.editWord(editingW, editWord, editEmoji, editRime)
+    if (err) { setAddError(err); return }
+    setAddError('')
     setEditingW(null)
   }
-  function cancelEdit() { setEditingW(null) }
+  function cancelEdit() { setEditingW(null); setAddError('') }
 
   // ── Reset ─────────────────────────────────────────────────────────
   function handleReset() {
@@ -80,6 +100,10 @@ export default function WordManager({ isOpen, onClose, wordData }) {
               onChange={e => setNewEmoji(e.target.value)}
             />
             <button className="wm-add-btn" onClick={handleAdd}>+ Add</button>
+          </div>
+          <div className="wm-add-row" style={{ marginTop: 8 }}>
+            <RimeSelect value={newRime} onChange={v => { setNewRime(v); setAddError('') }} />
+            <span className="wm-hint">Word family / ending sound (optional)</span>
           </div>
           {addError && <div className="wm-error">{addError}</div>}
         </div>
@@ -119,6 +143,7 @@ export default function WordManager({ isOpen, onClose, wordData }) {
                   value={editEmoji}
                   onChange={e => setEditEmoji(e.target.value)}
                 />
+                <RimeSelect value={editRime} onChange={setEditRime} />
                 <button className="wm-save-btn"   onClick={saveEdit}>  ✓</button>
                 <button className="wm-cancel-btn" onClick={cancelEdit}>✗</button>
               </div>
@@ -128,6 +153,7 @@ export default function WordManager({ isOpen, onClose, wordData }) {
                 <span className="wm-row-emoji">{item.e ?? '👁️'}</span>
                 <span className="wm-row-word">{item.w.toUpperCase()}</span>
                 <LenBadge len={item.length} />
+                {item.rime && <span className="wm-badge wm-badge--rime">{item.rime}</span>}
                 {item.isCustom && <span className="wm-badge wm-badge--custom">yours</span>}
                 {item.isCustom && (
                   <button className="wm-edit-btn" onClick={() => startEdit(item)}>✏️</button>

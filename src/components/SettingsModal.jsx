@@ -1,3 +1,5 @@
+import { FAMILY_GROUPS } from '../data/words'
+
 function ToggleSwitch({ checked, onChange }) {
   return (
     <label className="toggle-switch">
@@ -14,8 +16,18 @@ export default function SettingsModal({
   useSightWords, setUseSightWords,
   hidePicture, setHidePicture,
   letterCase, setLetterCase,
+  filterMode, setFilterMode,
+  familySel, setFamilySel,
+  chunkView, setChunkView,
 }) {
   if (!isOpen) return null
+
+  const familyMode = filterMode === 'family'
+  // Which vowel group is being browsed, derived from the current selection
+  const [selKind, selId] = familySel.split(':')
+  const activeGroup = FAMILY_GROUPS.find(g =>
+    selKind === 'group' ? g.id === selId : g.families.some(f => f.rime === selId)
+  ) ?? FAMILY_GROUPS[0]
 
   return (
     <div className="settings-overlay" onClick={onClose}>
@@ -33,21 +45,84 @@ export default function SettingsModal({
         {/* Settings rows */}
         <div className="settings-sheet-body">
 
-          {/* Word length */}
+          {/* Filter mode */}
           <div className="setting-row">
-            <span className="setting-label">Word length</span>
+            <span className="setting-label">Practice by</span>
             <div className="pill-group">
-              {[3, 4, 5, 6].map(n => (
-                <button
-                  key={n}
-                  className={`pill${wordLength === n ? ' active' : ''}`}
-                  onClick={() => setWordLength(n)}
-                >
-                  {n}
-                </button>
-              ))}
+              <button
+                className={`pill${!familyMode ? ' active' : ''}`}
+                onClick={() => setFilterMode('length')}
+              >
+                Word length
+              </button>
+              <button
+                className={`pill${familyMode ? ' active' : ''}`}
+                onClick={() => setFilterMode('family')}
+              >
+                Word family
+              </button>
             </div>
           </div>
+
+          {!familyMode ? (
+            <div className="setting-row">
+              <span className="setting-label">Word length</span>
+              <div className="pill-group">
+                {[3, 4, 5, 6].map(n => (
+                  <button
+                    key={n}
+                    className={`pill${wordLength === n ? ' active' : ''}`}
+                    onClick={() => setWordLength(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="family-picker">
+              <div className="setting-label">Vowel sound</div>
+              <div className="pill-wrap">
+                {FAMILY_GROUPS.map(g => (
+                  <button
+                    key={g.id}
+                    className={`pill${activeGroup.id === g.id ? ' active' : ''}`}
+                    onClick={() => setFamilySel(`group:${g.id}`)}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+              <div className="setting-label">Word family</div>
+              <div className="pill-wrap">
+                <button
+                  className={`pill pill--family${familySel === `group:${activeGroup.id}` ? ' active' : ''}`}
+                  onClick={() => setFamilySel(`group:${activeGroup.id}`)}
+                >
+                  All {activeGroup.label}
+                </button>
+                {activeGroup.families.map(f => (
+                  <button
+                    key={f.rime}
+                    className={`pill pill--family${familySel === `family:${f.rime}` ? ' active' : ''}`}
+                    onClick={() => setFamilySel(`family:${f.rime}`)}
+                  >
+                    {f.rime}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {familyMode && (
+            <div className="setting-row">
+              <span className="setting-label">Sound chunks (reading)</span>
+              <ToggleSwitch
+                checked={chunkView}
+                onChange={e => setChunkView(e.target.checked)}
+              />
+            </div>
+          )}
 
           {/* Letter case */}
           <div className="setting-row">
@@ -68,14 +143,16 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {/* Sight words */}
-          <div className="setting-row">
-            <span className="setting-label">Sight words</span>
-            <ToggleSwitch
-              checked={useSightWords}
-              onChange={e => setUseSightWords(e.target.checked)}
-            />
-          </div>
+          {/* Sight words (length mode only) */}
+          {!familyMode && (
+            <div className="setting-row">
+              <span className="setting-label">Sight words</span>
+              <ToggleSwitch
+                checked={useSightWords}
+                onChange={e => setUseSightWords(e.target.checked)}
+              />
+            </div>
+          )}
 
           {/* Hide picture */}
           <div className="setting-row">

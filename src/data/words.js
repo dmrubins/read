@@ -52,6 +52,87 @@ export const SIGHT_WORDS = {
       'though','toward','travel','trying','turned','wanted','within','wonder'],
 }
 
+// ── Word families / partial sounds (rimes) ──────────────────────────────────
+// Short-vowel IPA, used for the "say it" tip: /vowel/ then /ending/
+const SHORT = { a: 'æ', e: 'ɛ', i: 'ɪ', o: 'ɑ', u: 'ʌ' }
+
+// say: how the sound is spelled out for kids ("a-t"); ipa: [vowel, ending]
+function family(rime, say, ipa, words) {
+  return { rime: `-${rime}`, say, ipa, words }
+}
+
+export const FAMILY_GROUPS = [
+  { id: 'short-a', label: 'Short A', families: [
+    family('at', ['a', 't'], [SHORT.a, 't'], [['cat','🐱'],['bat','🦇'],['hat','🎩'],['mat','🧘'],['rat','🐀'],['fat','🐷'],['pat','✋'],['sat','🪑']]),
+    family('an', ['a', 'n'], [SHORT.a, 'n'], [['can','🥫'],['fan','🪭'],['pan','🍳'],['man','👨'],['ran','🏃'],['van','🚐']]),
+    family('ap', ['a', 'p'], [SHORT.a, 'p'], [['cap','🧢'],['map','🗺️'],['nap','😴'],['tap','🚰'],['clap','👏'],['trap','🪤']]),
+    family('ag', ['a', 'g'], [SHORT.a, 'g'], [['bag','🎒'],['tag','🏷️'],['rag','🧹'],['wag','🐕'],['flag','🚩']]),
+  ]},
+  { id: 'short-e', label: 'Short E', families: [
+    family('ed', ['e', 'd'], [SHORT.e, 'd'], [['bed','🛏️'],['red','🔴'],['fed','🥣'],['shed','🏚️']]),
+    family('en', ['e', 'n'], [SHORT.e, 'n'], [['hen','🐔'],['pen','🖊️'],['ten','🔟'],['men','👥']]),
+    family('et', ['e', 't'], [SHORT.e, 't'], [['net','🕸️'],['pet','🐶'],['wet','💧'],['jet','✈️'],['vet','🩺']]),
+  ]},
+  { id: 'short-i', label: 'Short I', families: [
+    family('in', ['i', 'n'], [SHORT.i, 'n'], [['bin','🗑️'],['fin','🦈'],['pin','📌'],['win','🏆'],['tin','🥫'],['spin','🔄']]),
+    family('ip', ['i', 'p'], [SHORT.i, 'p'], [['dip','🥑'],['lip','👄'],['rip','📄'],['tip','💡'],['ship','🚢'],['clip','📎']]),
+    family('it', ['i', 't'], [SHORT.i, 't'], [['bit','🍪'],['fit','👟'],['hit','🥊'],['sit','🪑'],['kit','🧰']]),
+  ]},
+  { id: 'short-o', label: 'Short O', families: [
+    family('op', ['o', 'p'], [SHORT.o, 'p'], [['hop','🦘'],['mop','🧹'],['pop','🎈'],['top','🔝'],['stop','🛑'],['drop','💧']]),
+    family('ot', ['o', 't'], [SHORT.o, 't'], [['dot','🟣'],['hot','🔥'],['pot','🍲'],['rot','🍎'],['knot','🪢'],['spot','🐕']]),
+    family('og', ['o', 'g'], [SHORT.o, 'g'], [['dog','🐶'],['fog','🌫️'],['frog','🐸'],['log','🪵'],['jog','🏃']]),
+  ]},
+  { id: 'short-u', label: 'Short U', families: [
+    family('ug', ['u', 'g'], [SHORT.u, 'g'], [['bug','🐛'],['hug','🫂'],['jug','🏺'],['mug','☕'],['rug','🧶'],['tug','🚤']]),
+    family('un', ['u', 'n'], [SHORT.u, 'n'], [['bun','🍞'],['fun','🎪'],['run','🏃'],['sun','☀️']]),
+    family('ut', ['u', 't'], [SHORT.u, 't'], [['cut','✂️'],['hut','🛖'],['nut','🥜']]),
+  ]},
+  { id: 'digraph', label: 'Digraphs / Blends', families: [
+    family('ing', ['i', 'ng'], [SHORT.i, 'ŋ'], [['king','👑'],['ring','💍'],['sing','🎤'],['wing','🪽']]),
+    family('all', ['aw', 'l'], ['ɔ', 'l'], [['ball','⚽'],['call','📞'],['fall','🍂'],['wall','🧱']]),
+    family('ack', ['a', 'k'], [SHORT.a, 'k'], [['back','🔙'],['sack','🛍️'],['pack','📦'],['black','⚫'],['track','🛤️']]),
+    family('ock', ['o', 'k'], [SHORT.o, 'k'], [['sock','🧦'],['lock','🔒'],['clock','⏰'],['rock','🪨']]),
+    family('uck', ['u', 'k'], [SHORT.u, 'k'], [['duck','🦆'],['truck','🚚'],['luck','🍀']]),
+  ]},
+]
+
+// Full word entry. `w`/`e` are kept alongside `word`/`emoji` because the rest of
+// the app (and saved custom words) use the short keys.
+export function makeEntry(word, emoji, rime = null, isSightWord = false) {
+  const suffix = rime ? rime.replace(/^-/, '') : ''
+  const hasRime = !!suffix && word.endsWith(suffix)
+  return {
+    id: hasRime ? `${suffix}-${word}` : word,
+    word, w: word,
+    emoji: emoji ?? null, e: emoji ?? null,
+    onset: hasRime ? word.slice(0, word.length - suffix.length) : '',
+    rime: hasRime ? rime : null,
+    isSightWord,
+    length: word.length,
+  }
+}
+
+export const FAMILIES = FAMILY_GROUPS.flatMap(g =>
+  g.families.map(f => ({
+    ...f,
+    id: f.rime.slice(1),
+    groupId: g.id,
+    entries: f.words.map(([w, e]) => makeEntry(w, e, f.rime)),
+  }))
+)
+export const FAMILY_BY_RIME = Object.fromEntries(FAMILIES.map(f => [f.rime, f]))
+export const FAMILY_WORDS = FAMILIES.flatMap(f => f.entries)
+export const ALL_ONSETS = [...new Set(FAMILY_WORDS.map(e => e.onset).filter(Boolean))]
+
+// "Say /æ/ then /t/ -> /æt/"
+export function familyTip(rime) {
+  const f = FAMILY_BY_RIME[rime]
+  if (!f) return ''
+  const [v, c] = f.ipa
+  return `Say /${v}/ then /${c}/ -> /${v}${c}/`
+}
+
 // Classic "X is for Y" associations shown in the letter zoom modal
 export const LETTER_WORDS = {
   a: { word: 'Apple',     emoji: '🍎' },

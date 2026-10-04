@@ -6,6 +6,7 @@ import WordManager from './components/WordManager'
 import ReadingCard from './components/ReadingCard'
 import SpellingCard from './components/SpellingCard'
 import LetterZoomModal from './components/LetterZoomModal'
+import RimeModal from './components/RimeModal'
 import JewelBucket from './components/JewelBucket'
 import JewelBurst from './components/JewelBurst'
 import { GEMS } from './data/words'
@@ -35,6 +36,9 @@ export default function App() {
   const [useSightWords, setUseSightWords] = useState(false)
   const [hidePicture, setHidePicture] = useState(true)
   const [letterCase, setLetterCase]   = useState('upper')
+  const [filterMode, setFilterMode]   = useState('length')          // 'length' | 'family'
+  const [familySel, setFamilySel]     = useState('group:short-a')     // 'group:<id>' | 'family:<-rime>'
+  const [chunkView, setChunkView]     = useState(true)
 
   // ── Game state ────────────────────────────────────────────────────
   const recentWords = useRef([])
@@ -49,15 +53,18 @@ export default function App() {
   const [settingsOpen, setSettingsOpen]   = useState(false)
   const [wordManagerOpen, setWordManagerOpen] = useState(false)
   const [zoomedLetter, setZoomedLetter]   = useState(null)
+  const [zoomedRime, setZoomedRime]       = useState(null)
   const [burstKey, setBurstKey]           = useState(0)
 
   const { playTone, playCelebration } = useAudio()
 
-  // ── Word pool (re-derives when length, sight toggle, or custom words change) ──
+  const familyMode = filterMode === 'family'
+
+  // ── Word pool (re-derives when filter, sight toggle, or custom words change) ──
   const wordPool = useMemo(
-    () => wordData.buildPool(wordLength, useSightWords),
+    () => wordData.buildPool(wordLength, useSightWords, familyMode ? familySel : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [wordLength, useSightWords, wordData.customWords, wordData.hiddenWords]
+    [wordLength, useSightWords, familyMode, familySel, wordData.customWords, wordData.hiddenWords]
   )
 
   // Re-pick when pool changes
@@ -137,6 +144,23 @@ export default function App() {
     }
   }
 
+  function handleChunkWrong() {
+    setFirstTry(false)
+    playTone(200, 0.15, 'sawtooth')
+  }
+
+  function handleChunkPick() {
+    playTone(600, 0.1)
+  }
+
+  function handleChunkDone() {
+    if (!currentItem) return
+    playTone(600, 0.1)
+    setSpelledSoFar([...currentItem.w])
+    setCurrentLetterIdx(currentItem.w.length)
+    if (firstTry) awardJewel()
+  }
+
   function handleReadingSuccess() {
     awardJewel()
     loadNewWord(wordPool)
@@ -153,6 +177,7 @@ export default function App() {
   const currentWord  = currentItem?.w ?? ''
   const currentEmoji = currentItem?.e ?? null
   const isSight      = !currentEmoji
+  const currentRime  = familyMode ? (currentItem?.rime ?? null) : null
 
   // ── Render ────────────────────────────────────────────────────────
   return (
@@ -185,18 +210,25 @@ export default function App() {
           mode === 'reading' ? (
             <ReadingCard
               key={wordKey}
+              item={currentItem}
+              chunked={familyMode && chunkView && !!currentRime}
+              focusRime={currentRime}
               word={currentWord}
               emoji={currentEmoji}
               isSight={isSight}
               hidePicture={hidePicture}
               letterCase={letterCase}
               onZoomLetter={setZoomedLetter}
+              onZoomRime={setZoomedRime}
               onDidIt={handleReadingSuccess}
               onNext={nextWord}
             />
           ) : (
             <SpellingCard
               key={wordKey}
+              item={currentItem}
+              focusRime={currentRime}
+              canChunk={!!currentRime}
               word={currentWord}
               emoji={currentEmoji}
               isSight={isSight}
@@ -208,6 +240,9 @@ export default function App() {
               onSetSpellMode={handleSetSpellMode}
               onPickLetter={handlePickLetter}
               onPickWord={handlePickWord}
+              onChunkPick={handleChunkPick}
+              onChunkWrong={handleChunkWrong}
+              onChunkDone={handleChunkDone}
               onNext={nextWord}
             />
           )
@@ -224,6 +259,9 @@ export default function App() {
         useSightWords={useSightWords} setUseSightWords={setUseSightWords}
         hidePicture={hidePicture}     setHidePicture={setHidePicture}
         letterCase={letterCase}       setLetterCase={setLetterCase}
+        filterMode={filterMode}       setFilterMode={setFilterMode}
+        familySel={familySel}         setFamilySel={setFamilySel}
+        chunkView={chunkView}         setChunkView={setChunkView}
       />
 
       <WordManager
@@ -239,6 +277,10 @@ export default function App() {
           currentWord={currentWord}
           onClose={() => setZoomedLetter(null)}
         />
+      )}
+
+      {zoomedRime && (
+        <RimeModal rime={zoomedRime} letterCase={letterCase} onClose={() => setZoomedRime(null)} />
       )}
 
       <JewelBurst triggerKey={burstKey} />
