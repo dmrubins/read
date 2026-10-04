@@ -38,7 +38,7 @@ export default function App() {
   const [letterCase, setLetterCase]   = useState('upper')
   const [filterMode, setFilterMode]   = useState('length')          // 'length' | 'family'
   const [familySel, setFamilySel]     = useState('group:short-a')     // 'group:<id>' | 'family:<-rime>'
-  const [chunkView, setChunkView]     = useState(true)
+  const [chunkView, setChunkView]     = useState(false)   // reading: show word as [onset][rime] chunks
 
   // ── Game state ────────────────────────────────────────────────────
   const recentWords = useRef([])
@@ -211,7 +211,9 @@ export default function App() {
             <ReadingCard
               key={wordKey}
               item={currentItem}
-              chunked={familyMode && chunkView && !!currentRime}
+              canChunk={!!currentRime}
+              chunked={chunkView && !!currentRime}
+              onToggleChunk={() => setChunkView(v => !v)}
               focusRime={currentRime}
               word={currentWord}
               emoji={currentEmoji}
@@ -261,7 +263,6 @@ export default function App() {
         letterCase={letterCase}       setLetterCase={setLetterCase}
         filterMode={filterMode}       setFilterMode={setFilterMode}
         familySel={familySel}         setFamilySel={setFamilySel}
-        chunkView={chunkView}         setChunkView={setChunkView}
       />
 
       <WordManager

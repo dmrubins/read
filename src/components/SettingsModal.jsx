@@ -18,7 +18,6 @@ export default function SettingsModal({
   letterCase, setLetterCase,
   filterMode, setFilterMode,
   familySel, setFamilySel,
-  chunkView, setChunkView,
 }) {
   if (!isOpen) return null
 
@@ -114,15 +113,6 @@ export default function SettingsModal({
             </div>
           )}
 
-          {familyMode && (
-            <div className="setting-row">
-              <span className="setting-label">Sound chunks (reading)</span>
-              <ToggleSwitch
-                checked={chunkView}
-                onChange={e => setChunkView(e.target.checked)}
-              />
-            </div>
-          )}
 
           {/* Letter case */}
           <div className="setting-row">

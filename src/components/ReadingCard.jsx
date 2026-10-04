@@ -2,7 +2,7 @@ import { useState } from 'react'
 import FocusBanner from './FocusBanner'
 
 export default function ReadingCard({
-  item, chunked, focusRime,
+  item, chunked, canChunk, onToggleChunk, focusRime,
   word, emoji, isSight,
   hidePicture, letterCase,
   onZoomLetter, onZoomRime, onDidIt, onNext,
@@ -26,6 +26,23 @@ export default function ReadingCard({
       <div className={`word-emoji${showPicture && hasImage ? '' : ' word-emoji--hidden'}`}>
         {showPicture ? (emoji || '💬') : '❓'}
       </div>
+
+      {canChunk && (
+        <div className="spell-mode-toggle">
+          <button
+            className={`spell-mode-btn${!chunked ? ' active' : ''}`}
+            onClick={() => chunked && onToggleChunk()}
+          >
+            Letters
+          </button>
+          <button
+            className={`spell-mode-btn${chunked ? ' active' : ''}`}
+            onClick={() => !chunked && onToggleChunk()}
+          >
+            Sound chunks
+          </button>
+        </div>
+      )}
 
       <div className="section-label">
         {chunked ? 'Tap a sound to zoom' : 'Tap a letter to zoom'}
